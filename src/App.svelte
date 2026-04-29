@@ -5,183 +5,57 @@
 </svelte:head>
 
 <script>
-  import { writable } from 'svelte/store';
-  import Header from './lib/Header.svelte';
-  import Section from './lib/Section.svelte';
-  import Modal from './lib/Modal.svelte';
-  import ProjectCard from './lib/ProjectCard.svelte';
+  import { onMount } from 'svelte';
+  import Decorations from './lib/Decorations.svelte';
+  import Sidebar from './lib/Sidebar.svelte';
 
-  export const theme = writable('dark');
-
-  let modalOpen = false;
-  let modalTitle = '';
-  let modalContent = '';
-
-  function openModal(title, content) {
-    modalTitle = title;
-    modalContent = content;
-    modalOpen = true;
-  }
-
-  function closeModal() {
-    modalOpen = false;
-  }
-
-  const projects = [
-    {
-      title: 'TaskFlow',
-      description: 'A terminal-first project management tool with Kanban boards, time tracking, and Git integration.',
-      tags: ['Go', 'CLI', 'SQLite'],
-      repoUrl: '#',
-      liveUrl: '',
-    },
-    {
-      title: 'DataSync',
-      description: 'Real-time database synchronization library supporting conflict resolution and offline-first operation.',
-      tags: ['TypeScript', 'WebSockets', 'PostgreSQL'],
-      repoUrl: '#',
-      liveUrl: '#',
-    },
-    {
-      title: 'AuthKit',
-      description: 'Composable authentication middleware for Node.js — JWT, OAuth2, and session-based auth in one package.',
-      tags: ['Node.js', 'TypeScript', 'OAuth2'],
-      repoUrl: '#',
-      liveUrl: '',
-    },
-    {
-      title: 'LogPilot',
-      description: 'Structured logging service with a web UI for filtering, search, and alerting on log patterns.',
-      tags: ['Python', 'FastAPI', 'React'],
-      repoUrl: '#',
-      liveUrl: '#',
-    },
-    {
-      title: 'GridQL',
-      description: 'Visual GraphQL query builder that generates typed client code and documents your schema automatically.',
-      tags: ['GraphQL', 'TypeScript', 'Vite'],
-      repoUrl: '#',
-      liveUrl: '#',
-    },
-    {
-      title: 'NightWatch',
-      description: 'Lightweight uptime monitor with status pages, incident history, and multi-channel alerting.',
-      tags: ['Go', 'HTMX', 'SQLite'],
-      repoUrl: '#',
-      liveUrl: '',
-    },
+  const sections = [
+    { id: 'about', label: 'About' },
+    { id: 'projects', label: 'Projects' },
+    { id: 'experience', label: 'Experience' },
+    { id: 'contact', label: 'Contact' },
   ];
+
+  function updateScroll() {
+    document.documentElement.style.setProperty('--scroll', window.scrollY);
+  }
+
+  function updateSize() {
+    const root = document.documentElement;
+    root.style.setProperty('--vh', window.innerHeight);
+    root.style.setProperty('--page-height', root.scrollHeight);
+  }
+
+  onMount(() => {
+    updateSize();
+    updateScroll();
+    window.addEventListener('scroll', updateScroll, { passive: true });
+    window.addEventListener('resize', updateSize);
+    return () => {
+      window.removeEventListener('scroll', updateScroll);
+      window.removeEventListener('resize', updateSize);
+    };
+  });
 </script>
 
-<div class="app" data-theme={$theme}>
-  <Header {theme} />
+<div class="app">
+  <section class="hero">
+    <div class="hero-text scroll-blur">
+      <h1 class="name">Jacob Smith</h1>
+      <p class="title">Software Engineer</p>
+    </div>
+  </section>
 
-  <main>
-    <Section id="about" label="About" color="var(--section-a)">
-      <div class="about-content">
-        <p class="about-lead">
-          Software engineer focused on building tools that make other engineers faster.
-          I work across the stack with a preference for systems-level thinking and clean interfaces.
-        </p>
-        <p class="about-body">
-          Currently working on distributed systems and developer tooling. Previously built
-          data infrastructure and internal platforms at a few early-stage startups.
-          I care about correctness, observability, and writing code that's easy to delete.
-        </p>
-        <div class="about-meta">
-          <span class="meta-item">Based in [City]</span>
-          <span class="meta-sep">·</span>
-          <span class="meta-item">Open to opportunities</span>
-        </div>
+  {#each sections as s (s.id)}
+    <section class="panel" id={s.id}>
+      <div class="panel-content">
+        <span class="panel-label">{s.label}</span>
       </div>
-    </Section>
+    </section>
+  {/each}
 
-    <Section id="projects" label="Projects" color="var(--section-b)">
-      <div class="section-header">
-        <h2 class="section-title">Selected Projects</h2>
-      </div>
-      <div class="project-grid">
-        {#each projects as project}
-          <ProjectCard {...project} />
-        {/each}
-      </div>
-    </Section>
-
-    <Section id="experience" label="Experience" color="var(--section-c)">
-      <div class="section-header">
-        <h2 class="section-title">Experience</h2>
-      </div>
-      <div class="timeline">
-        <div class="timeline-item">
-          <div class="timeline-meta">
-            <span class="timeline-date">2023 – Present</span>
-          </div>
-          <div class="timeline-body">
-            <h3 class="timeline-role">Senior Software Engineer</h3>
-            <span class="timeline-company">Company Name</span>
-            <p class="timeline-desc">
-              Building and maintaining distributed systems for data ingestion and processing.
-              Led migration of core pipeline from monolith to services, reducing p99 latency by 40%.
-            </p>
-          </div>
-        </div>
-        <div class="timeline-item">
-          <div class="timeline-meta">
-            <span class="timeline-date">2021 – 2023</span>
-          </div>
-          <div class="timeline-body">
-            <h3 class="timeline-role">Software Engineer</h3>
-            <span class="timeline-company">Previous Company</span>
-            <p class="timeline-desc">
-              Full-stack development on internal tooling and customer-facing APIs.
-              Owned the authentication layer and developer onboarding experience.
-            </p>
-          </div>
-        </div>
-        <div class="timeline-item">
-          <div class="timeline-meta">
-            <span class="timeline-date">2019 – 2021</span>
-          </div>
-          <div class="timeline-body">
-            <h3 class="timeline-role">Software Engineer</h3>
-            <span class="timeline-company">First Company</span>
-            <p class="timeline-desc">
-              Backend engineering on a B2B SaaS platform.
-              Built data export pipelines and REST APIs consumed by third-party integrations.
-            </p>
-          </div>
-        </div>
-      </div>
-    </Section>
-
-    <Section id="contact" label="Contact" color="var(--section-d)">
-      <div class="contact-content">
-        <p class="contact-lead">
-          Reach out via email or find me on the platforms below.
-        </p>
-        <div class="contact-links">
-          <a href="mailto:you@example.com" class="contact-link">
-            <span class="contact-link-label">Email</span>
-            <span class="contact-link-value">you@example.com</span>
-          </a>
-          <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="contact-link">
-            <span class="contact-link-label">GitHub</span>
-            <span class="contact-link-value">github.com/username</span>
-          </a>
-          <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" class="contact-link">
-            <span class="contact-link-label">LinkedIn</span>
-            <span class="contact-link-value">linkedin.com/in/username</span>
-          </a>
-        </div>
-      </div>
-    </Section>
-  </main>
-
-  {#if modalOpen}
-    <Modal title={modalTitle} on:close={closeModal}>
-      <p>{modalContent}</p>
-    </Modal>
-  {/if}
+  <Decorations />
+  <Sidebar {sections} />
 </div>
 
 <style>
@@ -191,229 +65,107 @@
     padding: 0;
   }
 
-  :global(body) {
+  :global(html, body) {
     margin: 0;
     padding: 0;
   }
 
-  :global([data-theme='dark']) {
+  :global(html) {
+    scrollbar-width: none;
+  }
+
+  :global(html::-webkit-scrollbar) {
+    display: none;
+  }
+
+  :global(:root) {
     --bg: #0e0e0e;
     --surface: #161616;
     --border: #242424;
     --text: #d0d0d0;
     --text-muted: #555555;
     --accent: #8faab3;
-    --section-a: #101214;
-    --section-b: #101210;
-    --section-c: #131010;
-    --section-d: #111110;
+
+    --scroll: 0;
+    --vh: 800;
+    --page-height: 1600;
+
+    --blur-threshold-vh: 0.35;
+    --blur-rate: 0.06;
+    --blur-max: 14px;
   }
 
-  :global([data-theme='light']) {
-    --bg: #f5f5f3;
-    --surface: #ffffff;
-    --border: #e0e0dc;
-    --text: #1a1a1a;
-    --text-muted: #888880;
-    --accent: #4a7a8a;
-    --section-a: #eff3f5;
-    --section-b: #eff3ef;
-    --section-c: #f5efef;
-    --section-d: #f3f2ef;
+  :global(.scroll-blur) {
+    filter: blur(clamp(
+      0px,
+      calc(
+        (var(--blur-threshold-vh) * var(--vh)
+          - var(--initial-y)
+          + var(--scroll) * var(--speed))
+        * var(--blur-rate) * 1px
+      ),
+      var(--blur-max)
+    ));
   }
 
   .app {
-    min-height: 100vh;
     background: var(--bg);
     color: var(--text);
     font-family: 'DM Mono', monospace;
-    transition: background 0.2s, color 0.2s;
   }
 
-  /* About */
-  .about-content {
-    max-width: 640px;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .about-lead {
-    font-size: 1rem;
-    font-weight: 400;
-    line-height: 1.7;
-    color: var(--text);
-  }
-
-  .about-body {
-    font-size: 0.85rem;
-    font-weight: 300;
-    line-height: 1.8;
-    color: var(--text-muted);
-  }
-
-  .about-meta {
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
-    margin-top: 0.5rem;
-  }
-
-  .meta-item {
-    font-size: 0.72rem;
-    font-weight: 500;
-    letter-spacing: 0.05em;
-    color: var(--text-muted);
-  }
-
-  .meta-sep {
-    color: var(--border);
-  }
-
-  /* Section shared */
-  .section-header {
-    margin-bottom: 1.5rem;
-  }
-
-  .section-title {
-    font-family: 'Syne', sans-serif;
-    font-weight: 800;
-    font-size: 1rem;
-    color: var(--text-muted);
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-  }
-
-  /* Projects */
-  .project-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
-  }
-
-  @media (max-width: 900px) {
-    .project-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
-
-  @media (max-width: 560px) {
-    .project-grid {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  /* Experience */
-  .timeline {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-  }
-
-  .timeline-item {
-    display: flex;
-    gap: 2rem;
-    padding: 1.5rem 0;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .timeline-item:last-child {
-    border-bottom: none;
-  }
-
-  .timeline-meta {
-    width: 100px;
-    flex-shrink: 0;
-  }
-
-  .timeline-date {
-    font-size: 0.72rem;
-    font-weight: 500;
-    letter-spacing: 0.05em;
-    color: var(--text-muted);
-  }
-
-  .timeline-body {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-  }
-
-  .timeline-role {
-    font-family: 'Syne', sans-serif;
-    font-weight: 800;
-    font-size: 0.9rem;
-    color: var(--text);
-  }
-
-  .timeline-company {
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: var(--accent);
-    letter-spacing: 0.03em;
-  }
-
-  .timeline-desc {
-    font-size: 0.8rem;
-    font-weight: 300;
-    line-height: 1.7;
-    color: var(--text-muted);
-    margin-top: 0.25rem;
-  }
-
-  /* Contact */
-  .contact-content {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    max-width: 480px;
-  }
-
-  .contact-lead {
-    font-size: 0.85rem;
-    font-weight: 300;
-    line-height: 1.7;
-    color: var(--text-muted);
-  }
-
-  .contact-links {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    overflow: hidden;
-  }
-
-  .contact-link {
+  .hero {
+    height: 100vh;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 0.9rem 1.1rem;
-    text-decoration: none;
-    border-bottom: 1px solid var(--border);
-    transition: background 0.15s;
+    justify-content: flex-start;
+    padding-left: 25vw;
   }
 
-  .contact-link:last-child {
-    border-bottom: none;
+  .hero-text {
+    text-align: left;
+    position: relative;
+    z-index: 2;
+    --speed: 1;
+    --initial-y: calc(0.5 * var(--vh));
   }
 
-  .contact-link:hover {
-    background: var(--surface);
+  .name {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(2.5rem, 8vw, 5rem);
+    color: var(--text);
+    letter-spacing: -0.02em;
+    line-height: 1;
   }
 
-  .contact-link-label {
-    font-size: 0.7rem;
-    font-weight: 500;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-  }
-
-  .contact-link-value {
-    font-size: 0.78rem;
+  .title {
+    font-family: 'DM Mono', monospace;
     font-weight: 400;
-    color: var(--accent);
+    font-size: clamp(0.85rem, 1.6vw, 1rem);
+    color: var(--text-muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-top: 1rem;
+  }
+
+  .panel {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 2rem;
+  }
+
+  .panel-content {
+    text-align: center;
+  }
+
+  .panel-label {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(2rem, 5vw, 3rem);
+    color: var(--text-muted);
+    letter-spacing: -0.01em;
   }
 </style>
