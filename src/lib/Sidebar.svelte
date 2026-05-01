@@ -62,6 +62,7 @@
     align-items: center;
     gap: 0.85rem;
     pointer-events: auto;
+    padding-right: 14px;
   }
 
   .nav-link {

@@ -6,10 +6,10 @@
 
 <script>
   import { onMount } from 'svelte';
-  import Decorations from './lib/Decorations.svelte';
   import Sidebar from './lib/Sidebar.svelte';
 
   const sections = [
+    { id: 'top', label: 'Top' },
     { id: 'about', label: 'About' },
     { id: 'projects', label: 'Projects' },
     { id: 'experience', label: 'Experience' },
@@ -39,14 +39,14 @@
 </script>
 
 <div class="app">
-  <section class="hero">
-    <div class="hero-text scroll-blur">
-      <h1 class="name">Jacob Smith</h1>
-      <p class="title">Software Engineer</p>
-    </div>
-  </section>
+  <header class="hero-text">
+    <h1 class="name">Jacob Smith</h1>
+    <p class="title">Software Engineer</p>
+  </header>
 
-  {#each sections as s (s.id)}
+  <section class="hero" id="top"></section>
+
+  {#each sections.slice(1) as s (s.id)}
     <section class="panel" id={s.id}>
       <div class="panel-content">
         <span class="panel-label">{s.label}</span>
@@ -54,7 +54,6 @@
     </section>
   {/each}
 
-  <Decorations />
   <Sidebar {sections} />
 </div>
 
@@ -90,22 +89,7 @@
     --vh: 800;
     --page-height: 1600;
 
-    --blur-threshold-vh: 0.35;
-    --blur-rate: 0.06;
-    --blur-max: 14px;
-  }
-
-  :global(.scroll-blur) {
-    filter: blur(clamp(
-      0px,
-      calc(
-        (var(--blur-threshold-vh) * var(--vh)
-          - var(--initial-y)
-          + var(--scroll) * var(--speed))
-        * var(--blur-rate) * 1px
-      ),
-      var(--blur-max)
-    ));
+    --t: clamp(0, calc(var(--scroll) / var(--vh)), 1);
   }
 
   .app {
@@ -116,24 +100,25 @@
 
   .hero {
     height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    padding-left: 25vw;
   }
 
   .hero-text {
+    position: fixed;
+    top: calc(10vw - var(--t) * (10vw - 2vh));
+    left: calc(2vw + var(--t) * (2vh - 2vw));
+    z-index: 10;
     text-align: left;
-    position: relative;
-    z-index: 2;
-    --speed: 1;
-    --initial-y: calc(0.5 * var(--vh));
+    padding: calc(var(--t) * 0.5rem) calc(var(--t) * 0.85rem);
+    border-radius: 10px;
+    background: rgba(14, 14, 14, calc(var(--t) * 0.45));
+    backdrop-filter: blur(calc(var(--t) * 10px));
+    -webkit-backdrop-filter: blur(calc(var(--t) * 10px));
   }
 
   .name {
-    font-family: 'Syne', sans-serif;
+    font-family: 'Outfit', sans-serif;
     font-weight: 800;
-    font-size: clamp(2.5rem, 8vw, 5rem);
+    font-size: calc(5rem - var(--t) * (5rem - 1.25rem));
     color: var(--text);
     letter-spacing: -0.02em;
     line-height: 1;
@@ -142,11 +127,11 @@
   .title {
     font-family: 'DM Mono', monospace;
     font-weight: 400;
-    font-size: clamp(0.85rem, 1.6vw, 1rem);
+    font-size: calc(1rem - var(--t) * (1rem - 0.7rem));
     color: var(--text-muted);
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    margin-top: 1rem;
+    margin-top: calc(1rem - var(--t) * (1rem - 0.25rem));
   }
 
   .panel {
