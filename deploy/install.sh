@@ -12,8 +12,8 @@
 set -euo pipefail
 
 # === EDIT THESE =====================================================
-REPO_URL="https://github.com/YOUR_USER/portfolio.git"
-DOMAIN="portfolio.example.com"
+REPO_URL="https://github.com/jts2052/portfolio.git"
+DOMAIN="portfolio.jacob-smith.online"
 # ====================================================================
 
 INSTALL_DIR=/opt/portfolio
