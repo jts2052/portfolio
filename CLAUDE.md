@@ -1,8 +1,10 @@
 # Portfolio – CLAUDE.md
 
-A single-page software portfolio built with **Svelte + Vite**. No router. No SSR.
+A single-page software portfolio built with **Svelte 5 + Vite**. No router. No SSR.
 
-Hero (name + title) with a parallax X/O decoration layer that the title slides under and blurs as you scroll, followed by `100vh` placeholder section panels (about / projects / experience / contact) and a fixed sidebar with section jump links and a scroll-progress fill.
+A fixed hero (name + title) that shrinks and tucks into the top-left corner as you scroll, a UR10 3D model that auto-rotates while the hero is in view and fades out once you scroll past it, a globally-shared toggle switch in the top-right that everyone on the site shares state with, and a stack of `100vh` placeholder section panels (about / projects / experience / contact) with a fixed sidebar on the right that has a scroll-progress fill and section jump links.
+
+The switch is backed by a small Python/FastAPI service (see `server/`) that persists a single click count to disk.
 
 ---
 
@@ -10,106 +12,126 @@ Hero (name + title) with a parallax X/O decoration layer that the title slides u
 
 ```
 src/
-├── App.svelte           # Root – hero, section panels, owns scroll/resize state
-├── main.js              # Vite entry point
+├── App.svelte             # Root – hero, panels, owns scroll/resize listeners and CSS tokens
+├── main.js                # Vite entry point
 └── lib/
-    ├── Decorations.svelte  # Fixed full-viewport layer; places + animates marks
-    ├── Mark.svelte         # Single X or O rendered as inline SVG
-    └── Sidebar.svelte      # Right-side fixed nav: progress fill + jump-to buttons
+    ├── RobotViewer.svelte # Fixed <model-viewer> of ur10.glb; fades out past hero
+    ├── Sidebar.svelte     # Right-side fixed nav: progress fill + jump-to buttons
+    └── Switch.svelte      # Top-right global click counter / toggle, polls /api/clicks
+
+public/
+└── ur10.glb               # Robot model loaded by RobotViewer
+
+server/
+├── main.py                # FastAPI app: GET/POST /api/clicks
+├── requirements.txt       # fastapi, uvicorn
+└── clicks.txt             # Persisted click total (gitignored, created on first POST)
 ```
+
+Frontend deps: `svelte ^5`, `vite ^6`, `@google/model-viewer ^4` (web component, registered by side-effect import in `RobotViewer.svelte`).
+
+Backend deps: `fastapi`, `uvicorn`. No DB.
 
 ---
 
 ## Dev Commands
 
+Run the frontend and backend in two terminals:
+
 ```bash
+# terminal 1 – frontend
 npm run dev      # http://localhost:5173
 npm run build    # → dist/
 npm run preview  # serve the production build locally
+
+# terminal 2 – backend
+cd server
+python3 -m venv .venv                      # first time only
+.venv/bin/pip install -r requirements.txt  # first time only
+.venv/bin/uvicorn main:app --reload --port 8000 --workers 1
 ```
+
+Or, with the venv activated (`source server/.venv/bin/activate`), `uvicorn main:app --reload --port 8000 --workers 1` directly.
+
+Vite is configured to proxy `/api/*` → `http://localhost:8000` (see `vite.config.js`), so the frontend always uses relative paths and the same code works in dev and behind a reverse proxy in prod.
 
 ---
 
-## How the Effect Works
+## Shared scroll state
 
-**Layering.** `Decorations.svelte` renders a `position: fixed; inset: 0; z-index: 2; pointer-events: none` layer on top of the hero. The hero sits in normal document flow and scrolls at the page's natural rate. The decoration layer is fixed but gets a `translateY` proportional to `scrollY * MARK_SPEED`, so the marks scroll at a fraction of page speed (default 0.5×). Result: the hero text moves up faster than the marks, so the text passes under them while the marks themselves also drift upward and eventually leave the viewport.
-
-Set `MARK_SPEED = 0` to pin the marks (model "a"), `1` to glue them to the text. In between is true parallax.
-
-**Shared scroll state.** `App.svelte` owns the only `scroll` and `resize` listeners. It writes three unitless numbers onto `document.documentElement`:
+`App.svelte` owns the only `scroll` and `resize` listeners. It writes three unitless numbers onto `document.documentElement`:
 
 - `--scroll` = `window.scrollY` (updated on every scroll event)
 - `--vh` = `window.innerHeight` (updated on resize)
 - `--page-height` = `documentElement.scrollHeight` (updated on resize)
 
-All three inherit through the entire tree via CSS, so any element can read them in `calc()` without prop drilling and without its own listener.
+A derived token rides on top:
 
-**Per-element blur (`.scroll-blur`).** A single `:global(.scroll-blur)` rule in `App.svelte` applies a `filter: blur()` whose intensity is computed from each element's *current* viewport Y. Each element opts in by setting two custom properties:
+- `--t` = `clamp(0, --scroll / --vh, 1)` — hero-progress in `[0, 1]`. `0` at the top of the page, `1` once you've scrolled one viewport.
 
-- `--initial-y` — the element's viewport Y (in unitless px) at `scroll = 0`
-- `--speed` — how fast its viewport Y changes per scrolled pixel (text uses `1`, marks use `--mark-speed`)
-
-The shared formula computes `currentY = initialY - scroll * speed`, then ramps blur from `0` at `currentY = BLUR_THRESHOLD * vh` up to `BLUR_MAX` near the top, clamped at both ends. Tunable via three `:root` vars in `App.svelte`:
-
-- `--blur-threshold-vh` (default `0.35`) — fraction of viewport height where blur kicks in
-- `--blur-rate` (default `0.06`) — px of blur per px past the threshold
-- `--blur-max` (default `14px`) — upper bound
-
-Hero text sets `--initial-y: calc(0.5 * var(--vh))` (centered in the first viewport). Marks set `--initial-y: calc(var(--y-pct) * var(--vh) / 100)`, so each mark blurs based on its own height in the viewport — bottom marks stay sharp longer than top marks.
-
-**Scroll length.** `.app` has `min-height: 200vh`, giving one full viewport of scroll past the hero. The empty space below the fold is intentional (it's just there for the effect to play out).
-
-**Placement.** On mount, `Decorations.svelte` runs rejection sampling against `window.innerWidth/innerHeight`:
-- 20 marks total, 50/50 X's and O's (alternating array, then shuffled).
-- Sizes randomized in `[SIZE_MIN, SIZE_MAX]` px.
-- For each mark, sample a random center; reject if it lies within `(size/2 + other.size/2 + PADDING)` of any already-placed mark. Up to `MAX_ATTEMPTS` retries before accepting whatever the last sample was.
-- Centers are converted to `%` of viewport size before being passed to `<Mark>`, so positions adapt to window resize. Sizes stay in px.
-- Positions are generated once on mount and never re-randomized.
-
-**Rotation.** A single `scroll` listener writes `--scroll` (= `window.scrollY`, unitless) onto the layer root. CSS variables inherit, so each `<Mark>` reads it and computes its own rotation:
-
-```css
-transform: translate(-50%, -50%)
-  rotate(calc(var(--scroll, 0) * var(--rate) * var(--dir) * 1deg));
-```
-
-Each mark gets its own `--rate` (deg per scrolled px, in `[RATE_MIN, RATE_MAX]`) and `--dir` (±1) at placement time, so they spin at different speeds and in mixed directions. Rotation is fully scroll-scrubbed — reverses if you scroll up.
-
-### Tunable knobs (in `Decorations.svelte`)
-
-| Constant | Effect |
-|----------|--------|
-| `COUNT` | Number of marks |
-| `SIZE_MIN` / `SIZE_MAX` | Mark size range (px) |
-| `PADDING` | Minimum gap between any two marks (px) |
-| `EDGE_MARGIN` | Minimum gap from viewport edges (px) |
-| `RATE_MIN` / `RATE_MAX` | Spin speed range (deg per scrolled px) |
-| `MARK_SPEED` | Mark scroll speed as fraction of page speed (0 = pinned, 1 = locked to text) |
-| `MAX_ATTEMPTS` | Placement retry budget per mark |
-
-To tune the scroll length, change `min-height` on `.app` in `App.svelte`.
+All four inherit through the entire tree via CSS, so any element can read them in `calc()` without prop drilling and without its own listener.
 
 ---
 
-## Theme
+## Hero collapse (`--t`-driven)
 
-Single dark palette baked onto `:root` in `App.svelte`. No theme toggle. Tokens:
+`.hero-text` is `position: fixed` and interpolates several properties on `--t`:
 
-| Token          | Purpose                          |
-|----------------|----------------------------------|
-| `--bg`         | Page background                  |
-| `--surface`    | (unused for now, reserved)       |
-| `--border`     | (unused for now, reserved)       |
-| `--text`       | Primary body text / name         |
-| `--text-muted` | Title, mark color                |
-| `--accent`     | (unused for now, reserved)       |
-| `--scroll`     | Live `window.scrollY` (set by JS) |
-| `--vh`         | Live `window.innerHeight` (set by JS) |
-| `--blur-threshold-vh` / `--blur-rate` / `--blur-max` | Scroll-blur tuning |
+| Property | At `--t = 0` | At `--t = 1` |
+|----------|--------------|--------------|
+| `top`    | `10vw`       | `2vh`        |
+| `left`   | `2vw`        | `2vh`        |
+| `.name` font-size | `5rem` | `1.25rem` |
+| `.title` font-size | `1rem` | `0.7rem` |
+| `.title` margin-top | `1rem` | `0.25rem` |
+| padding | `0` | `0.5rem 0.85rem` |
+| background | transparent | `rgba(14,14,14,0.45)` |
+| backdrop-filter | none | `blur(10px)` |
 
-Marks inherit `color: var(--text-muted)` and use `currentColor` on their SVG strokes — change `--text-muted` to recolor everything muted at once.
+Net effect: hero starts large and roughly centered-left in the first viewport, then shrinks into a small glass pill in the top-left corner as you scroll one viewport down.
+
+`.hero` itself is a `100vh` empty section with `id="top"` — it provides the scroll runway and the IntersectionObserver target for `RobotViewer`.
 
 ---
+
+## RobotViewer
+
+`<model-viewer>` (web component from `@google/model-viewer`) loads `/ur10.glb`, positioned `fixed` near the center of the first viewport (offset left of the hero text). Two behaviors:
+
+- **Fade with hero.** `opacity: calc(1 - var(--t))` — fully visible at the top, gone after one viewport of scroll.
+- **Pause when off-screen.** An `IntersectionObserver` on `#top` toggles the `auto-rotate` attribute. When the hero section is intersecting the viewport the model rotates (`rotation-per-second="30deg"`); when it's fully scrolled past, rotation is removed so the GPU isn't doing work nobody can see.
+
+User interaction is disabled (`interaction-prompt="none"`, `disable-zoom`, `disable-tap`, `disable-pan`) and the layer is `pointer-events: none`.
+
+---
+
+## Global Switch
+
+`Switch.svelte` renders a fixed iOS-style toggle in the top-right that mirrors the hero on the left: it starts large and shrinks into the corner as `--t` goes from 0 → 1.
+
+- **Shared state.** The on/off position is `count % 2 === 1`. Everyone on the site sees the same position because they're all reading the same global count.
+- **Counter text.** "switch has been flipped X times worldwide" — same Outfit / muted styling as the hero title, shrinks alongside.
+- **Click flow.** Optimistic increment locally, `POST /api/clicks`, reconcile from the response. If the request fails (offline, 429, etc.), the optimistic increment is rolled back.
+- **Polling.** `setInterval(fetchCount, 5000)`. So when other people click, you see the switch flip and the number tick up within ~5s.
+
+### Backend (`server/main.py`)
+
+FastAPI app with two endpoints:
+
+| Method | Path           | Returns           | Notes                      |
+|--------|----------------|-------------------|----------------------------|
+| GET    | `/api/clicks`  | `{"count": int}`  | Reads `server/clicks.txt`  |
+| POST   | `/api/clicks`  | `{"count": int}`  | Increments and returns new total |
+
+- **Persistence.** Single file `server/clicks.txt` containing the integer total as text. Read returns 0 if the file is missing or empty.
+- **Concurrency.** `POST` uses `fcntl.flock(LOCK_EX)` around the read-modify-write, so multiple processes / workers serialize safely. `GET` reads without locking (a torn read is at worst one click off and self-heals on the next request).
+- **Rate limit.** In-memory deque per client IP, **100 requests per 10 seconds**. Over the limit returns `429`. The deque is per-process, so this assumes 1 worker (see below) — multi-worker would loosen the effective limit by N×.
+- **CORS.** `http://localhost:5173` is allowlisted for direct access in case you bypass the Vite proxy. In prod (same-origin via reverse proxy) CORS is a no-op.
+- **Worker count.** Run with `--workers 1`. The file lock would handle multi-worker writes correctly, but the rate limiter's state is per-process. If you ever need to scale, move the rate limit out of memory (Redis, etc.).
+
+### When the schema changes
+
+If you change the response shape (e.g. add a `state` field, switch to a JSON file), update both `Switch.svelte` and the response model here. The frontend currently destructures `{ count }` and ignores everything else.
 
 ---
 
@@ -119,6 +141,7 @@ Marks inherit `color: var(--text-muted)` and use `currentColor` on their SVG str
 
 ```js
 const sections = [
+  { id: 'top', label: 'Top' },
   { id: 'about', label: 'About' },
   { id: 'projects', label: 'Projects' },
   { id: 'experience', label: 'Experience' },
@@ -126,13 +149,14 @@ const sections = [
 ];
 ```
 
-The same array drives both:
-- The placeholder `<section class="panel" id={...}>` elements rendered after the hero (each `min-height: 100vh`, flex-centered).
-- The jump-to buttons in `Sidebar.svelte`. Click handler is `document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })`.
+The same array drives:
 
-To add or rename sections: edit the array. The panels and sidebar buttons regenerate automatically.
+- **Sidebar buttons** — every entry, in order. Click handler is `document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })`.
+- **Panel elements** — `sections.slice(1)`. The `top` entry exists only as a sidebar jump target; the actual `#top` element is the hero section itself, so it isn't re-rendered as a panel.
 
-`Sidebar.svelte` is `position: fixed; right: 0; width: 110px; z-index: 3` with `pointer-events: none` on the wrapper and `pointer-events: auto` on the buttons (so the rest of the sidebar surface is click-through). The progress fill height is computed purely in CSS:
+To add or rename sections: edit the array. The panels and sidebar buttons regenerate automatically. To change which entries get rendered as panels (e.g. omit a label-only target), adjust the slice.
+
+`Sidebar.svelte` is `position: fixed; right: 0; width: var(--sidebar-width); z-index: 3` with `pointer-events: none` on the wrapper and `pointer-events: auto` on the buttons (so the rest of the sidebar surface is click-through). The progress fill height is computed purely in CSS:
 
 ```css
 height: calc(var(--scroll) / max(1, var(--page-height) - var(--vh)) * 100%);
@@ -140,9 +164,41 @@ height: calc(var(--scroll) / max(1, var(--page-height) - var(--vh)) * 100%);
 
 ---
 
+## Layout contract: sidebar gutter
+
+The sidebar reserves `--sidebar-width` (110px, defined on `:root` in `App.svelte`) on the right edge of every viewport. Two rules keep panel content from sliding under it:
+
+1. `.panel` sets `padding: 0 var(--sidebar-width) 0 2rem` so its flex centering happens in the area to the *left* of the sidebar.
+2. Anything inside a panel that wants to span the panel width should use `width: 100%`, **not** `100vw` — `100vw` ignores the panel padding and bleeds under the sidebar.
+
+If you change the sidebar width, only update `--sidebar-width` on `:root`. Both the sidebar's own `width` and the panel right-padding read from it.
+
+---
+
+## Theme
+
+Single dark palette baked onto `:root` in `App.svelte`. No theme toggle. Tokens:
+
+| Token             | Purpose                                          |
+|-------------------|--------------------------------------------------|
+| `--bg`            | Page background                                  |
+| `--surface`       | (unused for now, reserved)                       |
+| `--border`        | Sidebar progress track                           |
+| `--text`          | Primary body text / name                         |
+| `--text-muted`    | Title, panel labels, sidebar text + progress fill |
+| `--accent`        | Switch focus-visible outline                     |
+| `--scroll`        | Live `window.scrollY` (set by JS)                |
+| `--vh`            | Live `window.innerHeight` (set by JS)            |
+| `--page-height`   | Live `documentElement.scrollHeight` (set by JS)  |
+| `--t`             | `clamp(0, --scroll / --vh, 1)` — hero progress   |
+| `--sidebar-width` | Right-edge gutter reserved for the sidebar       |
+
+Body scrollbar is hidden globally (`scrollbar-width: none` + `::-webkit-scrollbar { display: none }`) so the sidebar's progress fill is the only scroll indicator.
+
+---
+
 ## Fonts
 
 Loaded from Google Fonts in `App.svelte`'s `<svelte:head>`:
 
-- **Syne** (800) — name
-- **DM Mono** (300, 400, 500) — title and body
+- **Outfit** (300, 400, 500, 800) — used everywhere. Name uses 800; title and sidebar buttons use 400/500.

@@ -26,3 +26,9 @@ tmp
 benchmarking/.profiles
 benchmarking/compare/.results
 benchmarking/compare/.profiles
+
+# server runtime state
+server/clicks.txt
+server/__pycache__/
+server/.venv/
+.aider*

@@ -25,7 +25,7 @@
     position: fixed;
     top: 0;
     right: 0;
-    width: 110px;
+    width: var(--sidebar-width);
     height: 100vh;
     z-index: 3;
     pointer-events: none;
@@ -69,7 +69,7 @@
     background: none;
     border: none;
     padding: 0.25rem 0.4rem;
-    font-family: 'DM Mono', monospace;
+    font-family: 'Outfit', sans-serif;
     font-size: 0.7rem;
     font-weight: 500;
     letter-spacing: 0.12em;
