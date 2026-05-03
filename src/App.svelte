@@ -1,12 +1,14 @@
 <svelte:head>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;800&display=swap" rel="stylesheet">
 </svelte:head>
 
 <script>
   import { onMount } from 'svelte';
   import Sidebar from './lib/Sidebar.svelte';
+  import RobotViewer from './lib/RobotViewer.svelte';
+  import Switch from './lib/Switch.svelte';
 
   const sections = [
     { id: 'top', label: 'Top' },
@@ -44,12 +46,17 @@
     <p class="title">Software Engineer</p>
   </header>
 
+  <Switch />
+
   <section class="hero" id="top"></section>
+
+  <RobotViewer />
 
   {#each sections.slice(1) as s (s.id)}
     <section class="panel" id={s.id}>
       <div class="panel-content">
         <span class="panel-label">{s.label}</span>
+        <div class="panel-inner-content"></div>
       </div>
     </section>
   {/each}
@@ -89,13 +96,15 @@
     --vh: 800;
     --page-height: 1600;
 
+    --sidebar-width: 110px;
+
     --t: clamp(0, calc(var(--scroll) / var(--vh)), 1);
   }
 
   .app {
     background: var(--bg);
     color: var(--text);
-    font-family: 'DM Mono', monospace;
+    font-family: 'Outfit', sans-serif;
   }
 
   .hero {
@@ -125,7 +134,7 @@
   }
 
   .title {
-    font-family: 'DM Mono', monospace;
+    font-family: 'Outfit', sans-serif;
     font-weight: 400;
     font-size: calc(1rem - var(--t) * (1rem - 0.7rem));
     color: var(--text-muted);
@@ -139,15 +148,24 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0 2rem;
+    padding: 0 var(--sidebar-width) 0 2rem;
   }
 
   .panel-content {
+    width: 100%;
+    height: 100%;
     text-align: center;
   }
 
+  .panel-inner-content {
+    width: 100%;
+    height: 100%;
+    background-color: white;
+  }
+
+
   .panel-label {
-    font-family: 'Syne', sans-serif;
+    font-family: 'Outfit', sans-serif;
     font-weight: 800;
     font-size: clamp(2rem, 5vw, 3rem);
     color: var(--text-muted);
