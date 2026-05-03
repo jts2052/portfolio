@@ -71,7 +71,7 @@
 <style>
   .switch-block {
     position: fixed;
-    top: calc(10vw - var(--t) * (10vw - 2vh));
+    top: calc(5vw - var(--t) * (5vw - 2vh));
     right: calc(2vw - var(--t) * (2vw - 2vh));
     z-index: 10;
     display: flex;

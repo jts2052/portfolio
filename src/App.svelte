@@ -9,13 +9,14 @@
   import Sidebar from './lib/Sidebar.svelte';
   import RobotViewer from './lib/RobotViewer.svelte';
   import Switch from './lib/Switch.svelte';
+  import Widget from './lib/Widget.svelte';
 
   const sections = [
     { id: 'top', label: 'Top' },
-    { id: 'about', label: 'About' },
-    { id: 'projects', label: 'Projects' },
-    { id: 'experience', label: 'Experience' },
-    { id: 'contact', label: 'Contact' },
+    { id: 'about', label: 'About', widgets: ['about'] },
+    { id: 'experience', label: 'Experience', widgets: ['thg', 'thg-intern'] },
+    { id: 'projects', label: 'Projects', widgets: [] },
+    { id: 'contact', label: 'Contact', widgets: [] },
   ];
 
   function updateScroll() {
@@ -50,14 +51,18 @@
 
   <section class="hero" id="top"></section>
 
-  <RobotViewer />
+  <!-- <RobotViewer /> -->
 
   {#each sections.slice(1) as s (s.id)}
     <section class="panel" id={s.id}>
-      <div class="panel-content">
-        <span class="panel-label">{s.label}</span>
-        <div class="panel-inner-content"></div>
-      </div>
+      <span class="panel-label">{s.label}</span>
+      {#if s.widgets?.length}
+        <div class="widgets-box">
+          {#each s.widgets as slug (slug)}
+            <Widget {slug} />
+          {/each}
+        </div>
+      {/if}
     </section>
   {/each}
 
@@ -146,23 +151,10 @@
   .panel {
     min-height: 100vh;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0 var(--sidebar-width) 0 2rem;
+    flex-direction: column;
+    padding: 2rem var(--sidebar-width) 2rem 2rem;
+    gap: 1rem;
   }
-
-  .panel-content {
-    width: 100%;
-    height: 100%;
-    text-align: center;
-  }
-
-  .panel-inner-content {
-    width: 100%;
-    height: 100%;
-    background-color: white;
-  }
-
 
   .panel-label {
     font-family: 'Outfit', sans-serif;
@@ -170,5 +162,18 @@
     font-size: clamp(2rem, 5vw, 3rem);
     color: var(--text-muted);
     letter-spacing: -0.01em;
+  }
+
+  .widgets-box {
+    flex: 1;
+    height: 100%;
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    align-content: start;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    background: var(--surface);
+    border-radius: 12px;
   }
 </style>

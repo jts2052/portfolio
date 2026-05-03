@@ -1,4 +1,5 @@
 import fcntl
+import os
 import time
 from collections import deque
 from pathlib import Path
@@ -7,7 +8,8 @@ from threading import Lock
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 
-CLICKS_FILE = Path(__file__).parent / "clicks.txt"
+_default_clicks = Path(__file__).parent / "clicks.txt"
+CLICKS_FILE = Path(os.environ.get("PORTFOLIO_CLICKS_PATH", _default_clicks))
 RATE_LIMIT_MAX = 100
 RATE_LIMIT_WINDOW_SECONDS = 10
 

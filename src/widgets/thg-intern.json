@@ -1,0 +1,13 @@
+{
+  "preview": {
+    "header": "THG Automation",
+    "title": "Software Developer Intern"
+  },
+  "rows": [
+    { "header": "THG Automation" },
+    { "title": "Software Developer Intern" },
+    { "text": "May 2024 - May 2025" },
+    { "title": "How rows work" },
+    { "text": "Each row is a single-keyword object. Supported keys for v1: header, title, text, images, videos. Rows render top-to-bottom in the overlay." }
+  ]
+}

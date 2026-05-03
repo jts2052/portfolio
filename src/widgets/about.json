@@ -1,0 +1,13 @@
+{
+  "preview": {
+    "header": "About Me",
+    "title": "Software Engineer"
+  },
+  "rows": [
+    { "header": "About Me" },
+    { "title": "Software Engineer" },
+    { "text": "Replace this widget with your own. JSON files in src/widgets/ become widgets, referenced by their slug from sections in App.svelte." },
+    { "title": "How rows work" },
+    { "text": "Each row is a single-keyword object. Supported keys for v1: header, title, text, images, videos. Rows render top-to-bottom in the overlay." }
+  ]
+}
