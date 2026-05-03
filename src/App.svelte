@@ -113,11 +113,11 @@
 
   .hero-text {
     position: fixed;
-    top: calc(10vw - var(--t) * (10vw - 2vh));
-    left: calc(2vw + var(--t) * (2vh - 2vw));
+    top: calc(5vw - var(--t) * (5vw - 2vh));
+    left: calc(3vw + var(--t) * (3vw - 3vw));
     z-index: 10;
     text-align: left;
-    padding: calc(var(--t) * 0.5rem) calc(var(--t) * 0.85rem);
+    padding: calc(var(--t) * 0.2rem) calc(var(--t) * 0.75rem);
     border-radius: 10px;
     background: rgba(14, 14, 14, calc(var(--t) * 0.45));
     backdrop-filter: blur(calc(var(--t) * 10px));
@@ -127,7 +127,7 @@
   .name {
     font-family: 'Outfit', sans-serif;
     font-weight: 800;
-    font-size: calc(5rem - var(--t) * (5rem - 1.25rem));
+    font-size: calc(4rem - var(--t) * (4rem - 1.25rem));
     color: var(--text);
     letter-spacing: -0.02em;
     line-height: 1;
@@ -136,11 +136,11 @@
   .title {
     font-family: 'Outfit', sans-serif;
     font-weight: 400;
-    font-size: calc(1rem - var(--t) * (1rem - 0.7rem));
+    font-size: calc(0.8rem - var(--t) * (0.8rem - 0.7rem));
     color: var(--text-muted);
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    margin-top: calc(1rem - var(--t) * (1rem - 0.25rem));
+    margin-top: calc(0.5rem - var(--t) * (0.5rem - 0.25rem));
   }
 
   .panel {
